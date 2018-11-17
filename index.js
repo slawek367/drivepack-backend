@@ -40,7 +40,7 @@ app.post('/users', (req, res) => {
         req.body.name &&
         req.body.surrname) {
 
-        var userData = {
+        let userData = {
             email: req.body.email,
             username: req.body.username,
             password: bcrypt.hashSync(req.body.password, 8),
@@ -52,7 +52,7 @@ app.post('/users', (req, res) => {
             if (err) {
                 return res.status(400).send({"error": err})
             } else {
-                var token = jwt.sign({id: user.id}, config.secret, {expiresIn: 86400}) // token expire in 24h
+                let token = jwt.sign({id: user.id}, config.secret, {expiresIn: 86400}) // token expire in 24h
                 res.status(200).send({ auth: true, token: token });
             }
         });
@@ -61,8 +61,8 @@ app.post('/users', (req, res) => {
     }
 })
 
-app.get('/me', (req, res) => {
-    var token = req.headers['x-access-token']
+app.get('/users/me', (req, res) => {
+    let token = req.headers['x-access-token']
     if (!token) {
         return res.status(401).send({'auth': false, message: 'No token provided'})
     }
@@ -71,7 +71,36 @@ app.get('/me', (req, res) => {
         if (err) {
             return res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
         }
-        res.status(200).send(decoded);
+        Users.findById(decoded.id, { password: 0 }, function (err, user) {
+            if (err) {
+                return res.status(500).send("There was a problem finding the user.");
+            }
+            if (!user) {
+                return res.status(404).send("No user found.");
+            }
+            res.status(200).send(user);
+        });;
+    })
+})
+
+app.post('/login', (req, res) => {
+    Users.findOne({email: req.body.email}, function (err, user) {
+        if (err){
+            return res.status(500).send('Error on the server.')
+        }
+        if (!user) {
+            return res.status(404).send('No user found.');
+        }
+
+        let passwordIsValid = bcrypt.compareSync(req.body.password, user.password)
+        if (!passwordIsValid) {
+            return res.status(401).send({ auth: false, token: null})
+        }
+
+        let token = jwt.sign({ id: user._id }, config.secret, {
+            expiresIn: 86400 // expires in 24h
+        });
+        res.status(200).send({auth: true, token: token})
     })
 })
 
