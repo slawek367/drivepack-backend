@@ -29,13 +29,32 @@ app.get('/users', (req, res) => {
 })
 
 app.post('/users', (req, res) => {
-    var user = new Users(req.body);
-    user.save((err) => {
-        if (err){
-            res.sendStatus(500);
+    if (req.body.email &&
+        req.body.username &&
+        req.body.password &&
+        req.body.passwordConf &&
+        req.body.name &&
+        req.body.surrname) {
+
+        var userData = {
+          email: req.body.email,
+          username: req.body.username,
+          password: req.body.password,
+          passwordConf: req.body.passwordConf,
+          name: req.body.name,
+          surrname: req.body.surrname
         }
-        res.sendStatus(200);
-    })
+
+        Users.create(userData, function (err, user) {
+            if (err) {
+              return res.sendStatus(400, err)
+            } else {
+              return res.sendStatus(200)
+            }
+        });
+    } else {
+        res.sendStatus(500);
+    }
 })
 
 var server = app.listen(PORT, () => {
