@@ -11,8 +11,10 @@
     "test": "node test.js"
   },
   "dependencies": {
+    "debug": "^4.1.0",
     "ejs": "^2.5.6",
-    "express": "^4.15.2"
+    "express": "^4.16.4",
+    "mongoose": "^5.3.12"
   },
   "devDependencies": {
     "request": "^2.81.0",
