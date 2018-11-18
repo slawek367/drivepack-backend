@@ -60,8 +60,7 @@ var PackagesSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        default: "WAITING",
-        required: true
+        default: "WAITING"
     },
     deliver_by_user_id: {
         type: String

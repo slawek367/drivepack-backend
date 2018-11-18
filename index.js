@@ -2,7 +2,8 @@ const express = require('express')
 const bodyParser = require('body-parser')
 const bcrypt = require('bcrypt');
 const session = require('express-session')
-var jwt = require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
+var cors = require('cors')
 
 const db = require('./db')
 const Users = require('./model/users')
@@ -11,9 +12,9 @@ const config = require('./config')
 
 const PORT = process.env.PORT || 5000
 const debug = require('debug')('http')
-    , http = require('http')
+    , http = require('http').Server(app)
     , name = 'drivepack';
-
+var io = require('socket.io')(http);
 /*
 const path = require('path')
 express()
@@ -25,6 +26,8 @@ express()
 */
 
 var app = express()
+app.options('*', cors()) // include before other routes 
+app.use(cors())
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: false }))
 
@@ -63,6 +66,7 @@ app.post('/users', (req, res) => {
 })
 
 app.get('/users/me', (req, res) => {
+    debug(req.headers)
     let token = req.headers['x-access-token']
     if (!token) {
         return res.status(401).send({'auth': false, message: 'No token provided'})
@@ -107,8 +111,13 @@ app.post('/login', (req, res) => {
 
 app.post('/packages', (req, res) => {
     let token = req.headers['x-access-token']
+    debug(req.headers)
     if (!token) {
-        return res.status(401).send({'auth': false, message: 'No token provided'})
+        token = req.body.token
+        debug(token)
+        if (!token){
+            return res.status(401).send({'auth': false, message: 'No token provided'})
+        }
     }
 
     jwt.verify(token, config.secret, function(err, decoded) {
@@ -217,3 +226,8 @@ app.put('/packages/:id/deliver_status/:status', (req, res) => {
 var server = app.listen(PORT, () => {
     debug('server is running on port', server.address().port);
 });
+
+// WEBSOCKET PART
+io.on('connection', (socket) =>{
+    debug('a user is connected')
+})
