@@ -133,6 +133,12 @@ app.post('/packages', (req, res) => {
     })
 })
 
+app.get('/packages', (req, res) => {
+    Packages.find({}, (err, packages) => {
+        res.send(packages);
+    })
+})
+
 app.get('/packages/my/:type', (req, res) => {
     /* type could be "sent" or "deliver" */
     let token = req.headers['x-access-token']
@@ -164,6 +170,21 @@ app.get('/packages/my/:type', (req, res) => {
                 res.status(404).send("Wrong parameter");
             }
         });;
+    })
+})
+
+app.put('/packages/:id', (req, res) => {
+    let newPackage = new Packages(req.body)
+
+    let updateData = newPackage.toObject()
+    delete updateData._id
+
+    Packages.update({_id: req.params.id}, updateData, {upsert: true}, function(err, updated_package){
+        if (!err) {
+            return res.status(200).send(updated_package)
+        } else {
+            res.status(404).send("Update error");
+        }
     })
 })
 
