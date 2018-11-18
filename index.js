@@ -188,6 +188,32 @@ app.put('/packages/:id', (req, res) => {
     })
 })
 
+app.put('/packages/:id/deliver_status/:status', (req, res) => {
+    let statusList = ["WAITING", "IN_DELIVER", "DELIVERED", "CANCELED"]
+    let status = req.params.status.toUpperCase()
+    debug(status)
+
+    if (!statusList.includes(status)) {
+        res.status(404).send('Wrong status, only possible to select "WAITING", "IN_DELIVER", "DELIVERED", "CANCELED"');
+        return
+    }
+
+    let newPackage = new Packages({
+        "status": status
+    })
+
+    let updateData = newPackage.toObject()
+    delete updateData._id
+
+    Packages.update({_id: req.params.id}, updateData, {upsert: true}, function(err, updated_package){
+        if (!err) {
+            return res.status(200).send(updated_package)
+        } else {
+            res.status(404).send("Update error");
+        }
+    })
+})
+
 var server = app.listen(PORT, () => {
     debug('server is running on port', server.address().port);
 });
