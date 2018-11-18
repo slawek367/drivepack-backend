@@ -122,7 +122,7 @@ app.post('/packages', (req, res) => {
             if (!user) {
                 return res.status(404).send("No user found.");
             }
-            req.body.user_id = user._id
+            req.body.user_sender_id = user._id
             Packages.create(req.body, function (err, package) {
                 if (err) {
                     return res.status(400).send({"error": err})
@@ -131,12 +131,39 @@ app.post('/packages', (req, res) => {
             });
         });;
     })
-
 })
 
-app.get('/packages', (req, res) => {
-    Packages.find({}, (err, packages) => {
-        res.send(packages);
+app.get('/packages/my/:type', (req, res) => {
+    /* type could be "sent" or "deliver" */
+    let token = req.headers['x-access-token']
+    if (!token) {
+        return res.status(401).send({'auth': false, message: 'No token provided'})
+    }
+
+    jwt.verify(token, config.secret, function(err, decoded) {
+        if (err) {
+            return res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
+        }
+        Users.findById(decoded.id, { password: 0 }, function (err, user) {
+            if (err) {
+                return res.status(500).send("There was a problem with adding a package.");
+            }
+            if (!user) {
+                return res.status(404).send("No user found.");
+            }
+            req.body.user_id = user._id
+            if (req.params.type === "sent"){
+                Packages.find({user_sender_id: user._id}, (err, packages) => {
+                    res.status(200).send({sent_packages: packages});
+                })
+            } else if (req.params.type === "deliver") {
+                Packages.find({deliver_by_user_id: user._id}, (err, packages) => {
+                    res.status(200).send({deliver_packages: packages});
+                })
+            } else {
+                res.status(404).send("Wrong parameter");
+            }
+        });;
     })
 })
 
